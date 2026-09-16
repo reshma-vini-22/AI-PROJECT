@@ -22,3 +22,70 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# =========================
+# FastAPI / Python files
+# =========================
+*.log
+
+# =========================
+# Uploaded resume files
+# =========================
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# =========================
+# Node / React
+# =========================
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# =========================
+# Vite
+# =========================
+.vite/
+
+# =========================
+# IDE / VS Code
+# =========================
+.vscode/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Python testing/cache
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Secrets / keys
+# =========================
+*.pem
+*.key
