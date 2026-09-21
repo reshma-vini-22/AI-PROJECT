@@ -7,8 +7,9 @@ import {
   Sparkles,
   Settings,
   LogOut,
- 
+
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 function Navbar() {
   const location = useLocation()
 
@@ -34,6 +35,14 @@ function Navbar() {
       icon: Sparkles,
     },
   ]
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    localStorage.removeItem("access_token")
+    localStorage.removeItem("user")
+
+    navigate("/login", { replace: true })
+  }
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-slate-950 text-white hidden md:flex flex-col">
@@ -75,11 +84,10 @@ function Navbar() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition ${
-                  isActive
-                    ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition ${isActive
+                  ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
               >
 
                 <span className="w-6 text-center text-base">
@@ -111,8 +119,14 @@ function Navbar() {
             Settings
           </button>
 
-          <button className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition">
-            <span className="w-6 text-center"><LogOut size={20}></LogOut></span>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition"
+          >
+            <span className="w-6 text-center">
+              <LogOut size={20} />
+            </span>
+
             Logout
           </button>
 

@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage"
 import SignupPage from "./pages/SignupPage"
 import DashboardPage from "./pages/DashboardPage"
 import AppLayout from "./components/AppLayout"
+import ProtectedRoute from "./components/ProtectedRoute"
 
 function App() {
   return (
@@ -21,8 +22,10 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
 
         {/* Main Application */}
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
         </Route>
 
         {/* Default Route */}
