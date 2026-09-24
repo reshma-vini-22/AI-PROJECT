@@ -11,6 +11,7 @@ import SignupPage from "./pages/SignupPage"
 import DashboardPage from "./pages/DashboardPage"
 import AppLayout from "./components/AppLayout"
 import ProtectedRoute from "./components/ProtectedRoute"
+import ResumeUploadPage from "./pages/ResumeUploadPage"
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/resume-upload" element={<ResumeUploadPage />} />
           </Route>
         </Route>
 

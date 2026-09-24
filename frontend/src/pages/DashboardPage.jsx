@@ -1,13 +1,35 @@
-
+import { useEffect, useState } from "react"
 import {
-  
+
   Upload,
   BriefcaseBusiness,
-  
+
   FileText,
   CheckCircle,
 } from "lucide-react"
+import { getMyResumes } from "../services/api"
 function DashboardPage() {
+  const [resumes, setResumes] = useState([])
+  const [isLoadingResumes, setIsLoadingResumes] = useState(true)
+  const [resumeError, setResumeError] = useState("")
+
+  useEffect(() => {
+    async function fetchResumes() {
+      try {
+        setIsLoadingResumes(true)
+
+        const data = await getMyResumes()
+
+        setResumes(data.resumes || [])
+      } catch (error) {
+        setResumeError(error.message)
+      } finally {
+        setIsLoadingResumes(false)
+      }
+    }
+
+    fetchResumes()
+  }, [])
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -17,10 +39,10 @@ function DashboardPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
           <div>
-            
+
 
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
-              Welcome back 
+              Welcome back
             </h1>
 
             <p className="mt-2 text-slate-500">
@@ -41,60 +63,60 @@ function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
 
-         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-  <div className="flex items-center justify-between">
-    <div>
-      <p className="text-sm font-medium text-slate-500">
-        Resume Score
-      </p>
-      <p className="text-xs text-slate-400 mt-1">
-        Overall resume quality
-      </p>
-    </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Resume Score
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Overall resume quality
+                </p>
+              </div>
 
-    {/* Donut Chart */}
-    <div className="relative w-20 h-20">
-      <svg
-        className="w-full h-full -rotate-90"
-        viewBox="0 0 100 100"
-      >
-        {/* Background circle */}
-        <circle
-          cx="50"
-          cy="50"
-          r="40"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          className="text-slate-100"
-        />
+              {/* Donut Chart */}
+              <div className="relative w-20 h-20">
+                <svg
+                  className="w-full h-full -rotate-90"
+                  viewBox="0 0 100 100"
+                >
+                  {/* Background circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="10"
+                    className="text-slate-100"
+                  />
 
-        {/* Progress circle */}
-        <circle
-          cx="50"
-          cy="50"
-          r="40"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray="251.2"
-          strokeDashoffset="45.2"
-          className="text-indigo-500"
-        />
-      </svg>
+                  {/* Progress circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray="251.2"
+                    strokeDashoffset="45.2"
+                    className="text-indigo-500"
+                  />
+                </svg>
 
-      {/* Score in the center */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-lg font-bold text-slate-900">
-          82%
-        </span>
-      </div>
-    </div>
-  </div>
+                {/* Score in the center */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-slate-900">
+                    82%
+                  </span>
+                </div>
+              </div>
+            </div>
 
-  
-</div>
+
+          </div>
           {/* Job Matches */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
 
@@ -111,7 +133,7 @@ function DashboardPage() {
               </div>
 
               <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 text-xl">
-                 <BriefcaseBusiness size={20} />
+                <BriefcaseBusiness size={20} />
               </div>
 
             </div>
@@ -138,7 +160,7 @@ function DashboardPage() {
               </div>
 
               <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 text-xl">
-               <FileText size={20} />
+                <FileText size={20} />
               </div>
 
             </div>
@@ -321,36 +343,88 @@ function DashboardPage() {
           </div>
 
         </div>
-
         {/* Recent Activity */}
         <div className="mt-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
-
-          <div className="p-6 border-b border-slate-100">
-
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900">
               Recent Activity
             </h2>
 
+            <span className="text-xs text-slate-400">
+              Latest uploads
+            </span>
           </div>
 
-          <div className="p-8 text-center">
+          <div className="p-6">
+            {isLoadingResumes ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-slate-500">
+                  Loading recent activity...
+                </p>
+              </div>
+            ) : resumeError ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-red-500">
+                  {resumeError}
+                </p>
+              </div>
+            ) : resumes.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                  <FileText size={22} />
+                </div>
 
-            <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-              ◷
-            </div>
+                <p className="mt-4 text-sm font-medium text-slate-600">
+                  No recent activity
+                </p>
 
-            <p className="mt-4 text-sm font-medium text-slate-600">
-              No recent activity
-            </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Upload your resume to see your activity here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {resumes.slice(0, 5).map((resume) => (
+                  <div
+                    key={resume.id}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <FileText size={20} />
+                    </div>
 
-            <p className="mt-1 text-xs text-slate-400">
-              Your resume analysis and job matching activity will appear here.
-            </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">
+                        {resume.filename}
+                      </p>
 
+                      <p className="text-xs text-slate-400 mt-1">
+                        Resume uploaded
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">
+                        {new Date(resume.uploaded_at).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )}
+                      </p>
+
+                      <p className="text-xs text-slate-400 mt-1">
+                        {resume.text_length} characters
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-
         </div>
-
       </div>
 
     </div>
