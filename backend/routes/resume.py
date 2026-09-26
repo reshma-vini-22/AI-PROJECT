@@ -7,8 +7,9 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Resume
+from models import Resume,ResumeAnalysis
 from utils.auth_utils import get_current_user
+from services.resume_analyzer import analyze_resume
 from utils.resume_parser import extract_resume_text
 
 
@@ -109,4 +110,123 @@ def get_my_resumes(
             }
             for resume in resumes
         ]
+    }
+@router.get("/{resume_id}")
+def get_resume(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    resume = (
+        db.query(Resume)
+        .filter(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not resume:
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    return {
+        "id": resume.id,
+        "filename": resume.filename,
+        "uploaded_at": resume.uploaded_at,
+        "text": resume.summary or "",
+        "text_length": len(resume.summary or ""),
+        "skills": resume.skills or [],
+        "experience": resume.experience or [],
+        "education": resume.education or [],
+        "certifications": resume.certifications or [],
+        "languages": resume.languages or []
+    }
+
+@router.post("/{resume_id}/analyze")
+def analyze_resume_endpoint(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Find the resume belonging to the logged-in user
+    resume = (
+        db.query(Resume)
+        .filter(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not resume:
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    # Make sure the resume contains extracted text
+    if not resume.summary:
+        raise HTTPException(
+            status_code=400,
+            detail="No resume text available for analysis"
+        )
+
+    # Check whether this resume has already been analyzed
+    existing_analysis = (
+        db.query(ResumeAnalysis)
+        .filter(ResumeAnalysis.resume_id == resume.id)
+        .first()
+    )
+
+    # Analyze the resume text
+    analysis_result = analyze_resume(resume.summary)
+
+    if existing_analysis:
+        # Update the existing analysis
+        existing_analysis.score = analysis_result["score"]
+        existing_analysis.skills = analysis_result["skills"]
+        existing_analysis.education = analysis_result["education"]
+        existing_analysis.experience = analysis_result["experience"]
+        existing_analysis.strengths = analysis_result["strengths"]
+        existing_analysis.weaknesses = analysis_result["weaknesses"]
+        existing_analysis.suggestions = analysis_result["suggestions"]
+
+        analysis = existing_analysis
+
+    else:
+        # Create a new analysis
+        analysis = ResumeAnalysis(
+            resume_id=resume.id,
+            score=analysis_result["score"],
+            skills=analysis_result["skills"],
+            education=analysis_result["education"],
+            experience=analysis_result["experience"],
+            strengths=analysis_result["strengths"],
+            weaknesses=analysis_result["weaknesses"],
+            suggestions=analysis_result["suggestions"]
+        )
+
+        db.add(analysis)
+
+    db.commit()
+    db.refresh(analysis)
+
+    return {
+        "message": "Resume analyzed successfully",
+        "resume_id": resume.id,
+        "analysis": {
+            "id": analysis.id,
+            "score": analysis.score,
+            "skills": analysis.skills or [],
+            "education": analysis.education or [],
+            "experience": analysis.experience or [],
+            "projects": analysis_result["projects"],
+            "strengths": analysis.strengths or [],
+            "weaknesses": analysis.weaknesses or [],
+            "suggestions": analysis.suggestions or [],
+            "analyzed_at": analysis.analyzed_at
+        }
     }

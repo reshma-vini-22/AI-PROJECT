@@ -7,11 +7,25 @@ import {
   FileText,
   CheckCircle,
 } from "lucide-react"
-import { getMyResumes } from "../services/api"
+import { getMyResumes, analyzeResume } from "../services/api"
 function DashboardPage() {
   const [resumes, setResumes] = useState([])
   const [isLoadingResumes, setIsLoadingResumes] = useState(true)
   const [resumeError, setResumeError] = useState("")
+  const [selectedResume, setSelectedResume] = useState(null)
+  const [analysis, setAnalysis] = useState(null)
+  const handleAnalyzeResume = async (resume) => {
+    try {
+      setSelectedResume(resume)
+      setAnalysis(null)
+
+      const result = await analyzeResume(resume.id)
+
+      setAnalysis(result.analysis)
+    } catch (error) {
+      setResumeError(error.message)
+    }
+  }
 
   useEffect(() => {
     async function fetchResumes() {
@@ -236,10 +250,7 @@ function DashboardPage() {
                   <Upload size={20} />
                 </div>
 
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">
-                  Your resume hasn't been analyzed yet
-                </h3>
-
+                
                 <p className="mt-2 max-w-md mx-auto text-sm text-slate-500">
                   Upload your PDF or DOCX resume and our AI will extract your
                   skills, experience, education and provide improvement suggestions.
@@ -414,6 +425,18 @@ function DashboardPage() {
                           }
                         )}
                       </p>
+                      <button
+                        onClick={() => handleAnalyzeResume(resume)}
+                        disabled={!resume.text_length || resume.text_length === 0}
+                        className={`mt-3 rounded-lg px-4 py-2 text-sm font-medium text-white transition ${!resume.text_length || resume.text_length === 0
+                          ? "cursor-not-allowed bg-slate-300"
+                          : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                      >
+                        {!resume.text_length || resume.text_length === 0
+                          ? "Cannot Analyze"
+                          : "Analyze Resume"}
+                      </button>
 
                       <p className="text-xs text-slate-400 mt-1">
                         {resume.text_length} characters

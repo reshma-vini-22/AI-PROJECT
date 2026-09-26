@@ -2,6 +2,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.auth import router as auth_router
 from routes.resume import router as resumes_router
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+import models
+from database import init_db
+from routes.auth import router as auth_router
+from routes.resume import router as resumes_router
+
+init_db()
+
+app = FastAPI(
+    title="AI Resume Analyzer & Job Matcher",
+    version="1.0.0"
+)
+from database import init_db
+
+init_db()
 app = FastAPI(
     title="AI Resume Analyzer & Job Matcher",
     version="1.0.0"

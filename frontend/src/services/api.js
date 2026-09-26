@@ -91,3 +91,28 @@ export async function getMyResumes() {
 
   return data
 }
+export async function analyzeResume(resumeId) {
+  const token = localStorage.getItem("access_token")
+
+  if (!token) {
+    throw new Error("You are not logged in")
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/resumes/${resumeId}/analyze`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Resume analysis failed")
+  }
+
+  return data
+}

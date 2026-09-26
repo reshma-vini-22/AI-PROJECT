@@ -1,4 +1,14 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey, JSON
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    Float,
+    Boolean,
+    ForeignKey,
+    JSON
+)
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -41,15 +51,6 @@ class Resume(Base):
     languages = Column(ARRAY(String), default=list)
 
     uploaded_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship("User", back_populates="resumes")
-
-
-User.resumes = relationship(
-    "Resume",
-    back_populates="user",
-    cascade="all, delete-orphan"
-)
 
 
 class Job(Base):
@@ -116,9 +117,59 @@ class JobMatch(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    resume = relationship("Resume", back_populates="matches")
-    job = relationship("Job", back_populates="matches")
 
+class ResumeAnalysis(Base):
+    __tablename__ = "resume_analyses"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    resume_id = Column(
+        Integer,
+        ForeignKey("resumes.id"),
+        nullable=False,
+        unique=True
+    )
+
+    score = Column(Integer, nullable=True)
+
+    skills = Column(ARRAY(String), default=list)
+    experience = Column(JSON, default=list)
+    education = Column(JSON, default=list)
+
+    strengths = Column(JSON, default=list)
+    weaknesses = Column(JSON, default=list)
+    suggestions = Column(JSON, default=list)
+
+    analyzed_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+
+# Relationships
+
+User.resumes = relationship(
+    "Resume",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)
+
+Resume.user = relationship(
+    "User",
+    back_populates="resumes"
+)
+
+Resume.analysis = relationship(
+    "ResumeAnalysis",
+    back_populates="resume",
+    uselist=False,
+    cascade="all, delete-orphan"
+)
+
+ResumeAnalysis.resume = relationship(
+    "Resume",
+    back_populates="analysis"
+)
 
 Resume.matches = relationship(
     "JobMatch",
@@ -130,4 +181,14 @@ Job.matches = relationship(
     "JobMatch",
     back_populates="job",
     cascade="all, delete-orphan"
+)
+
+JobMatch.resume = relationship(
+    "Resume",
+    back_populates="matches"
+)
+
+JobMatch.job = relationship(
+    "Job",
+    back_populates="matches"
 )
