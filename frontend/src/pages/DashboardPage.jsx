@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
 
   Upload,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react"
 import { getMyResumes, analyzeResume } from "../services/api"
 function DashboardPage() {
+  const navigate = useNavigate()
   const [resumes, setResumes] = useState([])
   const [isLoadingResumes, setIsLoadingResumes] = useState(true)
   const [resumeError, setResumeError] = useState("")
@@ -67,7 +69,11 @@ function DashboardPage() {
             </p>
           </div>
 
-          <button className="w-fit px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-semibold shadow-lg shadow-indigo-200 hover:from-indigo-600 hover:to-violet-700 transition">
+          <button
+            type="button"
+            onClick={() => navigate("/resume-upload")}
+            className="w-fit px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-semibold shadow-lg shadow-indigo-200 hover:from-indigo-600 hover:to-violet-700 transition"
+          >
             + Upload Resume
           </button>
 
@@ -259,7 +265,11 @@ function DashboardPage() {
                   skills, experience, education and provide improvement suggestions.
                 </p>
 
-                <button className="mt-6 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
+                <button
+                  type="button"
+                  onClick={() => navigate("/resume-analyzer")}
+                  className="mt-6 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition"
+                >
                   Analyze My Resume
                 </button>
 
@@ -286,7 +296,11 @@ function DashboardPage() {
 
             <div className="p-4 space-y-3">
 
-              <button className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 transition">
+              <button
+                type="button"
+                onClick={() => navigate("/resume-upload")}
+                className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 transition"
+              >
 
                 <div className="flex items-center gap-3">
 
@@ -398,7 +412,7 @@ function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {resumes.slice(0, 5).map((resume) => (
+                {resumes.slice(0, 3).map((resume) => (
                   <div
                     key={resume.id}
                     className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition"

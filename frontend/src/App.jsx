@@ -12,6 +12,8 @@ import DashboardPage from "./pages/DashboardPage"
 import AppLayout from "./components/AppLayout"
 import ProtectedRoute from "./components/ProtectedRoute"
 import ResumeUploadPage from "./pages/ResumeUploadPage"
+import JobMatchesPage from "./pages/JobMatchesPage"
+import AiAnalyser from "./pages/AiAnalyser"
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/resume-upload" element={<ResumeUploadPage />} />
+            <Route path="/job-matches" element={<JobMatchesPage />} />
+            <Route path="/resume-analyzer" element={<AiAnalyser />} />
           </Route>
         </Route>
 
@@ -36,10 +40,10 @@ function App() {
           element={<Navigate to="/login" replace />}
         />
 
+
       </Routes>
     </BrowserRouter>
   )
 }
 
 export default App
-

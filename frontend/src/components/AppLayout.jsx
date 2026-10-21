@@ -8,7 +8,7 @@ function AppLayout() {
 
       <Navbar />
 
-      <main className="md:ml-64">
+      <main className="pt-16 md:ml-64 md:pt-0">
         <Outlet />
       </main>
 
