@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { getMyResumes, getJobMatches } from "../services/api"
 import {
-    LayoutDashboard,
+    
     Upload,
     BriefcaseBusiness,
     BrainCircuit,
-    Settings,
+    
     Search,
     Bell,
     Bookmark,
@@ -24,11 +24,10 @@ import {
     FileSearch,
     ArrowUpRight,
     Building2,
-    CircleUserRound,
+
     CircleCheck,
     CircleX,
-    Send,
-    LoaderCircle,
+    
 } from "lucide-react"
 
 // --------------------------------------------------
@@ -36,7 +35,7 @@ import {
 // Replace this with your backend job-matching API later.
 // --------------------------------------------------
 
-const MOCK_JOBS = mockJobs
+
 // --------------------------------------------------
 // REUSABLE COMPONENTS
 // --------------------------------------------------
@@ -228,16 +227,56 @@ export default function JobMatchesPage() {
     const [hasAnalyzedResume, setHasAnalyzedResume] = useState(true)
     const [showFilters, setShowFilters] = useState(false)
 
-    // Demo loading state. Replace with a real API request later.
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setJobs(MOCK_JOBS)
-            setLoading(false)
-        }, 650)
+  async function loadJobMatches() {
+    setLoading(true)
 
-        return () => clearTimeout(timer)
-    }, [])
+    try {
+      const resumeResponse = await getMyResumes()
+      const resumes = resumeResponse.resumes || []
 
+      if (resumes.length === 0) {
+        setJobs([])
+        setHasAnalyzedResume(false)
+        return
+      }
+
+      // Use the most recently uploaded resume
+      const latestResume = resumes[0]
+
+      const matchResponse = await getJobMatches(latestResume.id)
+
+      const formattedJobs = (matchResponse.jobs || []).map((job) => ({
+        ...job,
+        color: "bg-indigo-100 text-indigo-700",
+        posted:
+          job.postedDaysAgo === 0
+            ? "Today"
+            : `${job.postedDaysAgo} days ago`,
+        workplace: job.location || "Not specified",
+        applicationUrl:
+          job.source === "Demo data" ||
+          job.applyUrl?.includes("example.com")
+            ? null
+            : job.applyUrl,
+        reason: `Matched skills: ${(job.matchedSkills || []).join(", ") || "None"}`,
+        breakdown: [],
+        responsibilities: [],
+        requirements: [],
+      }))
+
+      setJobs(formattedJobs)
+      setHasAnalyzedResume(true)
+    } catch (error) {
+      console.error("Failed to load job matches:", error)
+      setJobs([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  loadJobMatches()
+}, [])
     // Load local demo preferences.
     useEffect(() => {
         try {
