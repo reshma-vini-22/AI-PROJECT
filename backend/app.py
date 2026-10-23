@@ -7,6 +7,7 @@ from database import init_db
 from routes.auth import router as auth_router
 from routes.resume import router as resumes_router
 from routes.jobs import router as jobs_router
+from routes.ai import router as ai_router
 
 import models  # Ensures models are registered before table creation
 
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(resumes_router)
 app.include_router(jobs_router)
+app.include_router(ai_router)
 
 @app.get("/")
 def home():

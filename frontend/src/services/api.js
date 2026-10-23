@@ -170,3 +170,30 @@ export async function getJobMatches(resumeId) {
 
   return data
 }
+
+export async function getAIResumeAnalysis(resumeId) {
+  const token = localStorage.getItem("access_token")
+
+  if (!token) {
+    throw new Error("You are not logged in")
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/ai/analyze/${resumeId}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Failed to analyze resume with AI")
+  }
+
+  return data
+}
+
