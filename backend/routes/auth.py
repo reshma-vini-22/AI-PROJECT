@@ -206,3 +206,45 @@ def login_for_swagger(
         "access_token": access_token,
         "token_type": "bearer"
     }
+from pydantic import BaseModel, Field
+from fastapi import Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+from utils.auth_utils import get_current_user, verify_password, get_password_hash
+from models import User
+
+
+class ProfileUpdate(BaseModel):
+    username: str = Field(min_length=2, max_length=100)
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
+
+
+@router.get("/me")
+def get_me(user: User = Depends(get_current_user)):
+    return {"id": user.id, "email": user.email, "username": user.username}
+
+
+@router.put("/profile")
+def update_profile(data: ProfileUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user.username = data.username.strip()
+    db.commit()
+    return {"username": user.username}
+
+
+@router.put("/password")
+def change_password(data: PasswordChange, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(data.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"message": "Password updated"}
+
+
+@router.delete("/account", status_code=204)
+def delete_account(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db.delete(user)  # resumes and matches cascade-delete through the model relationships
+    db.commit()

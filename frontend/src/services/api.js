@@ -196,4 +196,34 @@ export async function getAIResumeAnalysis(resumeId) {
 
   return data
 }
+async function authFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+      ...(options.headers || {}),
+    },
+  })
 
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || "Request failed")
+  }
+
+  return res.status === 204 ? null : res.json()
+}
+
+export const getMe = () => authFetch("/api/auth/me")
+
+export const updateProfile = (data) =>
+  authFetch("/api/auth/profile", { method: "PUT", body: JSON.stringify(data) })
+
+export const changePassword = (data) =>
+  authFetch("/api/auth/password", { method: "PUT", body: JSON.stringify(data) })
+
+export const deleteAccount = () =>
+  authFetch("/api/auth/account", { method: "DELETE" })
+
+export const deleteResume = (resumeId) =>
+  authFetch(`/api/resume/${resumeId}`, { method: "DELETE" })

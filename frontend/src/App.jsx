@@ -14,6 +14,7 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import ResumeUploadPage from "./pages/ResumeUploadPage"
 import JobMatchesPage from "./pages/JobMatchesPage"
 import AiAnalyser from "./pages/AiAnalyser"
+import SettingsPage from "./pages/SettingsPage"
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/resume-upload" element={<ResumeUploadPage />} />
             <Route path="/job-matches" element={<JobMatchesPage />} />
             <Route path="/resume-analyzer" element={<AiAnalyser />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
 

@@ -213,6 +213,20 @@ function JobCard({
 // MAIN PAGE
 // --------------------------------------------------
 
+const JOB_SITES = {
+  linkedin: (keywords, location) =>
+    `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(location || "India")}`,
+
+  indeed: (keywords, location) =>
+    `https://in.indeed.com/jobs?q=${encodeURIComponent(keywords)}&l=${encodeURIComponent(location || "India")}`,
+
+  naukri: (keywords) =>
+    `https://www.naukri.com/${keywords
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")}-jobs`,
+}
+
 export default function JobMatchesPage() {
     const navigate = useNavigate()
 

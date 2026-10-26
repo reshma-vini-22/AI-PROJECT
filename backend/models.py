@@ -10,7 +10,7 @@ from sqlalchemy import (
     JSON
 )
 from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import ARRAY
 
 
@@ -78,6 +78,13 @@ class Job(Base):
     job_url = Column(String(500), unique=True, nullable=False)
 
     source = Column(String(100))
+    external_id = Column(String(100), unique=True, index=True, nullable=True)
+
+    posted_at = Column(DateTime, nullable=True)
+
+    first_seen_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
