@@ -132,10 +132,13 @@ function Navbar() {
 
           <div className="border-t border-slate-800 pt-4">
 
-            <button 
-            type="button"
-            onClick={() => navigate("/settings")}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition">
+            <button
+              type="button"
+              onClick={() => {
+                navigate("/settings")
+                setIsMobileMenuOpen(false)
+              }}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition">
               <span className="w-6 text-center"><Settings size={20} /></span>
               Settings
             </button>

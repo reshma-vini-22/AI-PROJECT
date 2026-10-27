@@ -8,9 +8,11 @@ from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from utils.auth_utils import get_current_user
 from database import get_db
 from models import User
+from pydantic import BaseModel, Field
+from fastapi import Depends, HTTPException
+from utils.auth_utils import get_current_user, verify_password, get_password_hash
 from schemas import (
     UserRegister,
     UserResponse,
@@ -206,12 +208,7 @@ def login_for_swagger(
         "access_token": access_token,
         "token_type": "bearer"
     }
-from pydantic import BaseModel, Field
-from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from utils.auth_utils import get_current_user, verify_password, get_password_hash
-from models import User
+
 
 
 class ProfileUpdate(BaseModel):

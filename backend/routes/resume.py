@@ -7,7 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Resume,ResumeAnalysis
+from models import Resume,ResumeAnalysis,User
 from utils.auth_utils import get_current_user
 from services.resume_analyzer import analyze_resume
 from utils.resume_parser import extract_resume_text
@@ -230,9 +230,18 @@ def analyze_resume_endpoint(
             "analyzed_at": analysis.analyzed_at
         }
     }
+
 @router.delete("/{resume_id}", status_code=204)
-def delete_resume(resume_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user.id).first()
+def delete_resume(
+    resume_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+
+    resume = (db.query(Resume)
+    .filter(Resume.id == resume_id, Resume.user_id == user.id)
+    .first()
+    )
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     db.delete(resume)

@@ -1,6 +1,13 @@
 
 const API_BASE_URL = "http://127.0.0.1:8000"
 
+// Must match the key your login page uses to save the token
+const TOKEN_KEY = "token"
+
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
 //register user
 export async function registerUser(fullName, username, email, password) {
   const response = await fetch(
@@ -197,7 +204,7 @@ export async function getAIResumeAnalysis(resumeId) {
   return data
 }
 async function authFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
