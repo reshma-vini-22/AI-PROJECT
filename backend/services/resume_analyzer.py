@@ -3,6 +3,29 @@ import re
 
 # Skills are stored using one canonical name.
 # This prevents React + React.js from being counted twice.
+
+def clean_resume_text(text):
+    """Remove resume-template tips and common page markers."""
+    cleaned_lines = []
+
+    for line in text.splitlines():
+        line = line.strip()
+
+        if not line:
+            continue
+
+        # Ignore instructional text from resume templates.
+        if re.match(r"^\(?\s*tip\s*:", line, re.IGNORECASE):
+            continue
+
+        # Ignore page-number-only lines.
+        if re.match(r"^page\s+\d+\s*$", line, re.IGNORECASE):
+            continue
+
+        cleaned_lines.append(line)
+
+    return "\n".join(cleaned_lines)
+
 SKILL_ALIASES = {
     "python": ["python"],
     "java": ["java"],
@@ -32,6 +55,46 @@ SKILL_ALIASES = {
     "data science": ["data science"],
     "figma": ["figma"],
     "ui/ux": ["ui/ux", "ui ux"],
+    
+    # Soft skills
+    "communication": [
+        "communication", "communication skills", "verbal communication",
+        "written communication", "interpersonal communication"
+    ],
+    "teamwork": [
+        "teamwork", "team work", "team player", "collaborative",
+        "collaboration", "working as part of a team"
+    ],
+    "leadership": [
+        "leadership", "leadership skills", "led a team",
+        "team leadership"
+    ],
+    "problem-solving": [
+        "problem-solving", "problem solving", "troubleshooting"
+    ],
+    "critical thinking": ["critical thinking"],
+    "time management": ["time management", "managing time"],
+    "organization": ["organization", "organisation", "organizational skills",
+                     "organisational skills"],
+    "adaptability": ["adaptability", "adaptable", "flexibility"],
+    "creativity": ["creativity", "creative thinking"],
+    "attention to detail": ["attention to detail", "detail-oriented"],
+    "decision-making": ["decision-making", "decision making"],
+    "conflict resolution": ["conflict resolution", "resolving conflicts"],
+    "responsibility": ["responsibility", "taking responsibility",
+                       "accountability"],
+    "self-motivation": ["self-motivated", "self motivation",
+                        "self-motivation"],
+    "customer service": ["customer service", "customer service skills"],
+    "numeracy": ["numeracy", "numeracy skills"],
+    "cash handling": ["cash handling", "handling cash"],
+    "coaching": ["coaching", "coached a team"],
+    "mentoring": ["mentoring", "mentored"],
+    "public speaking": ["public speaking", "presentation skills"],
+    "negotiation": ["negotiation", "negotiation skills"],
+    "confidentiality": ["confidentiality", "handling confidential information"],
+    "research": ["research", "research skills"],
+    "analytical skills": ["analytical skills", "analysis"],
 }
 
 
@@ -66,224 +129,192 @@ def extract_skills(text: str) -> list:
     return found_skills
 
 
-def extract_education(text: str) -> list:
-    """
-    Find actual education-related lines from the resume.
 
-    Avoids treating profile summaries that merely mention
-    Computer Science as education.
-    """
-
+def extract_education(text):
+    lines = text.splitlines()
     education = []
+    current_section = False
 
-    lines = text.splitlines()
-
-    education_keywords = [
-        "b.tech",
-        "b.e",
-        "b.sc",
-        "bca",
-        "m.tech",
-        "m.e",
-        "m.sc",
-        "mca",
-        "phd",
-        "bachelor",
-        "master",
-        "degree",
-        "university",
-        "college",
-    ]
-
-    for line in lines:
-        cleaned_line = line.strip()
-
-        if not cleaned_line:
-            continue
-
-        line_lower = cleaned_line.lower()
-
-        # Check for a clear education keyword.
-        has_education_keyword = any(
-            keyword in line_lower
-            for keyword in education_keywords
-        )
-
-        # Check for an education year range such as 2023 - Present.
-        has_year_range = (
-            ("20" in line_lower and "-" in line_lower)
-            or "present" in line_lower
-        )
-
-        # Keep the line only when it looks like an actual
-        # education entry.
-        if has_education_keyword and has_year_range:
-            if cleaned_line not in education:
-                education.append(cleaned_line)
-
-    return education[:10]
-
-def extract_experience(text: str) -> list:
-    """
-    Find job/internship experience entries from the resume.
-
-    Only role/company entries are returned.
-    Detailed responsibility/project lines are not returned
-    as separate experience entries.
-    """
-
-    experience = []
-
-    lines = text.splitlines()
-
-    ignored_headings = {
-        "experience",
-        "work experience",
-        "professional experience",
-        "projects",
-        "project",
-        "education",
-        "skills",
-        "technical skills",
-        "certifications",
-        "languages",
+    education_headings = {
+        "education", "educational qualifications",
+        "academic background", "academic qualifications"
     }
 
-    role_keywords = [
-        "intern",
-        "internship",
-        "developer",
-        "engineer",
-        "software developer",
-        "frontend developer",
-        "backend developer",
-        "full stack developer",
-        "software engineer",
-    ]
+    other_headings = {
+        "experience", "work experience", "professional experience",
+        "employment", "projects", "personal projects",
+        "skills", "technical skills", "certifications",
+        "achievements", "awards", "summary", "profile",
+        "objective", "contact", "interests", "references"
+    }
 
-    description_keywords = [
-        "built",
-        "developed",
-        "designed",
-        "implemented",
-        "created",
-        "worked",
-        "using",
-        "responsible",
-        "developing",
-    ]
-
-    education_keywords = [
-        "b.e",
-        "b.tech",
-        "bachelor",
-        "degree",
-        "college",
-        "university",
-        "education",
-    ]
-
-    profile_keywords = [
-        "undergraduate",
-        "career objective",
-        "objective",
-        "seeking",
-        "role to build",
-    ]
+    degree_pattern = re.compile(
+        r"\b(b\.?\s?tech|b\.?\s?e\.?|m\.?\s?tech|m\.?\s?e\.?|"
+        r"bca|mca|bsc|m\.?\s?sc|bcom|mcom|bba|mba|"
+        r"bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|diploma|"
+        r"degree|high school|higher secondary|12th|10th|sslc|hsc)\b",
+        re.IGNORECASE
+    )
 
     for line in lines:
-        cleaned_line = line.strip()
-
-        if not cleaned_line:
+        line = line.strip()
+        if not line:
             continue
 
-        line_lower = cleaned_line.lower()
+        heading = line.lower().rstrip(":").strip()
 
-        # Ignore section headings.
-        if line_lower in ignored_headings:
+        if heading in education_headings:
+            current_section = True
             continue
 
-        # Ignore education lines.
-        if any(keyword in line_lower for keyword in education_keywords):
+        if heading in other_headings:
+            current_section = False
             continue
 
-        # Ignore profile/objective statements.
-        if any(keyword in line_lower for keyword in profile_keywords):
-            continue
+        if current_section:
+            if line not in education:
+                education.append(line)
+        elif degree_pattern.search(line):
+            if line not in education:
+                education.append(line)
 
-        # Ignore detailed responsibility/project descriptions.
-        if any(keyword in line_lower for keyword in description_keywords):
-            continue
+    return education
 
-        # Keep lines that look like actual job/role entries.
-        if any(keyword in line_lower for keyword in role_keywords):
-            if cleaned_line not in experience:
-                experience.append(cleaned_line)
 
-    return experience             
 
-def extract_projects(text: str) -> list:
-    """
-    Find project-related lines from the resume.
-
-    Detailed project descriptions are returned here instead of
-    being treated as separate work experience entries.
-    """
-
-    projects = []
-
+def extract_experience(text):
     lines = text.splitlines()
+    experience = []
+    current_section = False
 
-    project_keywords = [
-        "built",
-        "developed",
-        "designed",
-        "implemented",
-        "created",
-        "developed a",
-        "built a",
-        "designed a",
-        "implemented a",
-    ]
+    experience_headings = {
+        "experience", "work experience", "professional experience",
+        "employment history", "work history", "internship",
+        "internships", "industrial experience"
+    }
 
-    education_keywords = [
-        "b.e",
-        "b.tech",
-        "bachelor",
-        "degree",
-        "college",
-        "university",
-    ]
+    other_headings = {
+        "education", "educational qualifications",
+        "academic background", "academic qualifications",
+        "projects", "personal projects", "academic projects",
+        "skills", "technical skills", "certifications",
+        "achievements", "awards", "summary", "profile",
+        "objective", "contact", "interests", "references"
+    }
 
-    profile_keywords = [
-        "undergraduate",
-        "career objective",
-        "objective",
-        "seeking",
-    ]
+    role_pattern = re.compile(
+        r"\b(software engineer|software developer|web developer|"
+        r"frontend developer|front-end developer|backend developer|"
+        r"back-end developer|full stack developer|full-stack developer|"
+        r"python developer|java developer|data analyst|data scientist|"
+        r"machine learning engineer|devops engineer|qa engineer|"
+        r"test engineer|intern|trainee|engineer|developer|analyst|"
+        r"designer|consultant|manager|administrator|programmer)\b",
+        re.IGNORECASE
+    )
 
     for line in lines:
-        cleaned_line = line.strip()
-
-        if not cleaned_line:
+        line = line.strip()
+        if not line:
             continue
 
-        line_lower = cleaned_line.lower()
+        heading = line.lower().rstrip(":").strip()
 
-        # Ignore education lines.
-        if any(keyword in line_lower for keyword in education_keywords):
+        if heading in experience_headings:
+            current_section = True
             continue
 
-        # Ignore profile/objective lines.
-        if any(keyword in line_lower for keyword in profile_keywords):
+        if heading in other_headings:
+            current_section = False
             continue
 
-        # Find project/action descriptions.
-        if any(keyword in line_lower for keyword in project_keywords):
-            if cleaned_line not in projects:
-                projects.append(cleaned_line)
+        if current_section:
+            if line not in experience:
+                experience.append(line)
+        elif role_pattern.search(line):
+            if line not in experience:
+                experience.append(line)
+
+    return experience
+
+
+def extract_projects(text):
+    lines = text.splitlines()
+    projects = []
+    current_section = ""
+    current_project_lines = []
+
+    project_sections = {
+        "project", "projects", "academic projects",
+        "personal projects", "key projects", "selected projects"
+    }
+
+    other_sections = {
+        "education", "experience", "work experience",
+        "professional experience", "employment",
+        "skills", "technical skills", "certifications",
+        "achievements", "awards", "summary", "profile",
+        "objective", "contact", "interests", "references"
+    }
+
+    def normalize_heading(line):
+        return line.strip().lower().rstrip(":").strip()
+
+    def save_project():
+        if not current_project_lines:
+            return
+
+        content = " ".join(current_project_lines).strip()
+        if content and content not in projects:
+            projects.append(content)
+
+    for line in lines:
+        line = line.strip()
+
+        if not line:
+            continue
+
+        heading = normalize_heading(line)
+
+        # Detect section headings.
+        if heading in project_sections:
+            save_project()
+            current_project_lines = []
+            current_section = "projects"
+            continue
+
+        if heading in other_sections:
+            save_project()
+            current_project_lines = []
+            current_section = heading
+            continue
+
+        # In a dedicated Projects section, collect project names
+        # and descriptions until another section begins.
+        if current_section == "projects":
+            # Ignore standalone links.
+            if re.match(r"^(https?://|www\.)", line, re.IGNORECASE):
+                continue
+
+            # Ignore bullets that contain only a link.
+            if re.match(r"^[-*•]\s*(https?://|www\.)", line, re.IGNORECASE):
+                continue
+
+            current_project_lines.append(line)
+
+        # Also detect explicitly named projects in other sections.
+        elif current_section in {
+            "education", "experience", "work experience",
+            "professional experience", "employment"
+        }:
+            if re.search(r"\b(project|capstone project|academic project)\b",
+                         line, re.IGNORECASE):
+                projects.append(line)
+
+    save_project()
 
     return projects
+
 
 def calculate_score(
     skills: list,
@@ -493,6 +524,7 @@ def generate_suggestions(
 
 
 def analyze_resume(text: str) -> dict:
+    text = clean_resume_text(text)
     """
     Analyze the complete resume and return structured results.
     """
@@ -543,3 +575,4 @@ def analyze_resume(text: str) -> dict:
         "weaknesses": weaknesses,
         "suggestions": suggestions,
     }
+

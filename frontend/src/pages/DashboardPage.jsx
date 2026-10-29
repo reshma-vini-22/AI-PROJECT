@@ -18,7 +18,7 @@ import {
   Upload,
   X,
 } from "lucide-react"
-import { getMyResumes, analyzeResume } from "../services/api"
+import { getMyResumes, analyzeResume, getLatestAnalysis } from "../services/api"
 
 // Update these paths to match the routes in App.jsx
 const ROUTES = {
@@ -101,24 +101,48 @@ function DashboardPage() {
 
   const [selectedResume, setSelectedResume] = useState(null)
   const [analysis, setAnalysis] = useState(null)
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true)
   const [analysisError, setAnalysisError] = useState("")
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false)
   const [analyzedCount, setAnalyzedCount] = useState(0)
 
+
   useEffect(() => {
-    async function fetchResumes() {
-      try {
-        setIsLoadingResumes(true)
-        const data = await getMyResumes()
-        setResumes(data.resumes || [])
-      } catch (error) {
-        setListError(error.message)
-      } finally {
-        setIsLoadingResumes(false)
+    async function loadDashboard() {
+      setIsLoadingResumes(true)
+      setIsLoadingAnalysis(true)
+
+      const [resumeResult, analysisResult] = await Promise.allSettled([
+        getMyResumes(),
+        getLatestAnalysis(),
+      ])
+
+      if (resumeResult.status === "fulfilled") {
+        setResumes(resumeResult.value.resumes || [])
+        setListError("")
+      } else {
+        setListError(
+          resumeResult.reason?.message || "Could not load your resumes."
+        )
       }
+
+      if (analysisResult.status === "fulfilled") {
+        const data = analysisResult.value
+
+        setAnalysis(data?.analysis || null)
+        setSelectedResume(data?.resume || null)
+      } else {
+        console.error(
+          "Could not load the latest analysis:",
+          analysisResult.reason
+        )
+      }
+
+      setIsLoadingResumes(false)
+      setIsLoadingAnalysis(false)
     }
 
-    fetchResumes()
+    loadDashboard()
   }, [])
 
   const handleAnalyzeResume = async (resume) => {
@@ -227,7 +251,12 @@ function DashboardPage() {
                 </button>
               </div>
 
-              {analysis ? (
+              {isLoadingAnalysis ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
+                  <LoaderCircle size={16} className="animate-spin" />
+                  Loading your latest analysis...
+                </div>
+              ) : analysis ? (
                 <div className="flex flex-col items-center gap-6 rounded-2xl bg-slate-900 p-6 text-white sm:flex-row">
                   <ScoreRing score={analysis.score} size="small" />
                   <div className="min-w-0 flex-1 text-center sm:text-left">
@@ -329,11 +358,10 @@ function DashboardPage() {
                           type="button"
                           onClick={() => handleAnalyzeResume(resume)}
                           disabled={!ready}
-                          className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                            ready
+                          className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${ready
                               ? "bg-slate-900 text-white hover:bg-slate-800"
                               : "cursor-not-allowed bg-slate-200 text-slate-400"
-                          }`}
+                            }`}
                         >
                           {ready ? "Analyze" : "Cannot analyze"}
                         </button>

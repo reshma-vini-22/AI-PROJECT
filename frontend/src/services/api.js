@@ -2,7 +2,7 @@
 const API_BASE_URL = "http://127.0.0.1:8000"
 
 // Must match the key your login page uses to save the token
-const TOKEN_KEY = "token"
+const TOKEN_KEY = "access_token"
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)
@@ -203,13 +203,22 @@ export async function getAIResumeAnalysis(resumeId) {
 
   return data
 }
+
 async function authFetch(path, options = {}) {
+  const token = getToken()
+
+  if (!token) {
+    throw new Error("You are not logged in")
+  }
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
       ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+      ...(options.body && !(options.body instanceof FormData)
+        ? { "Content-Type": "application/json" }
+        : {}),
     },
   })
 
@@ -222,6 +231,10 @@ async function authFetch(path, options = {}) {
 }
 
 export const getMe = () => authFetch("/api/auth/me")
+export const getResume = (resumeId) =>
+  authFetch(`/api/resumes/${resumeId}`)
+export const getLatestAnalysis = () =>
+  authFetch("/api/resumes/latest-analysis")
 
 export const updateProfile = (data) =>
   authFetch("/api/auth/profile", { method: "PUT", body: JSON.stringify(data) })
@@ -233,4 +246,4 @@ export const deleteAccount = () =>
   authFetch("/api/auth/account", { method: "DELETE" })
 
 export const deleteResume = (resumeId) =>
-  authFetch(`/api/resume/${resumeId}`, { method: "DELETE" })
+  authFetch(`/api/resumes/${resumeId}`, { method: "DELETE" })

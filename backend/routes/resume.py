@@ -111,6 +111,64 @@ def get_my_resumes(
             for resume in resumes
         ]
     }
+
+
+@router.get("/latest-analysis")
+def get_latest_analysis(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Find the latest resume belonging to the logged-in user
+    resume = (
+        db.query(Resume)
+        .filter(Resume.user_id == current_user.id)
+        .order_by(Resume.uploaded_at.desc(), Resume.id.desc())
+        .first()
+    )
+
+    if not resume:
+        return {
+            "resume": None,
+            "analysis": None
+        }
+
+    # Find the saved analysis for that resume
+    analysis = (
+        db.query(ResumeAnalysis)
+        .filter(ResumeAnalysis.resume_id == resume.id)
+        .first()
+    )
+
+    if not analysis:
+        return {
+            "resume": {
+                "id": resume.id,
+                "filename": resume.filename,
+                "uploaded_at": resume.uploaded_at
+            },
+            "analysis": None
+        }
+
+    return {
+        "resume": {
+            "id": resume.id,
+            "filename": resume.filename,
+            "uploaded_at": resume.uploaded_at
+        },
+        "analysis": {
+            "id": analysis.id,
+            "score": analysis.score,
+            "skills": analysis.skills or [],
+            "education": analysis.education or [],
+            "experience": analysis.experience or [],
+            "projects": [],
+            "strengths": analysis.strengths or [],
+            "weaknesses": analysis.weaknesses or [],
+            "suggestions": analysis.suggestions or [],
+            "analyzed_at": analysis.analyzed_at
+        }
+    }
+
 @router.get("/{resume_id}")
 def get_resume(
     resume_id: int,
@@ -143,6 +201,27 @@ def get_resume(
         "education": resume.education or [],
         "certifications": resume.certifications or [],
         "languages": resume.languages or []
+    }
+
+@router.get("/{resume_id}")
+def get_resume(
+    resume_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = (
+        db.query(Resume)
+        .filter(Resume.id == resume_id, Resume.user_id == user.id)
+        .first()
+    )
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    return {
+        "id": resume.id,
+        "filename": resume.filename,
+        "uploaded_at": resume.uploaded_at.isoformat() if resume.uploaded_at else None,
+        "text_content": resume.text_content or "",
     }
 
 @router.post("/{resume_id}/analyze")
@@ -237,12 +316,24 @@ def delete_resume(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-
-    resume = (db.query(Resume)
-    .filter(Resume.id == resume_id, Resume.user_id == user.id)
-    .first()
+    resume = (
+        db.query(Resume)
+        .filter(Resume.id == resume_id, Resume.user_id == user.id)
+        .first()
     )
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
+
+    # Remove saved analyses first, so the foreign key doesn't block the delete
+    db.query(ResumeAnalysis).filter(ResumeAnalysis.resume_id == resume.id).delete()
+
+    # Remove the uploaded file from disk, if it still exists
+    file_path = getattr(resume, "file_path", None)
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass  # the database record is still removed
+
     db.delete(resume)
     db.commit()
