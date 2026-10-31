@@ -150,15 +150,20 @@ export async function analyzeResume(resumeId) {
   return data
 }
 
-export async function getJobMatches(resumeId) {
+export async function getJobMatches(resumeId, { refresh = false, since } = {}) {
   const token = localStorage.getItem("access_token")
 
   if (!token) {
     throw new Error("You are not logged in")
   }
 
+  const params = new URLSearchParams()
+  if (refresh) params.set("refresh", "true")
+  if (since) params.set("since", since)
+  const query = params.toString() ? `?${params.toString()}` : ""
+
   const response = await fetch(
-    `${API_BASE_URL}/api/jobs/matches?resume_id=${resumeId}`,
+    `${API_BASE_URL}/api/jobs/matches/${resumeId}${query}`,
     {
       method: "GET",
       headers: {
@@ -167,12 +172,10 @@ export async function getJobMatches(resumeId) {
     }
   )
 
-  const data = await response.json()
+  const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(
-      data.detail || "Failed to retrieve job matches"
-    )
+    throw new Error(data.detail || "Failed to retrieve job matches")
   }
 
   return data
@@ -231,6 +234,7 @@ async function authFetch(path, options = {}) {
 }
 
 export const getMe = () => authFetch("/api/auth/me")
+
 export const getResume = (resumeId) =>
   authFetch(`/api/resumes/${resumeId}`)
 export const getLatestAnalysis = () =>

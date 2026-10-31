@@ -25,7 +25,7 @@ dist-ssr
 # =========================
 # Environment variables
 # =========================
-.env
+backend/.env
 .env.*
 !.env.example
 
