@@ -5,6 +5,7 @@ import requests
 from dotenv import load_dotenv
 from datetime import datetime
 from sqlalchemy.orm import Session
+from services.resume_analyzer import extract_skills
 
 from models import Job
 
@@ -66,6 +67,7 @@ def save_adzuna_jobs(db: Session, jobs: list) -> int:
         )
 
         description = item.get("description") or ""
+        detected_skills = extract_skills(description)
         title = item.get("title") or "Untitled job"
 
         existing = (
@@ -90,12 +92,14 @@ def save_adzuna_jobs(db: Session, jobs: list) -> int:
             existing.source = "Adzuna"
             existing.updated_at = datetime.utcnow()
             existing.is_active = True
+            existing.required_skills = detected_skills
+            existing.nice_to_have_skills = []
         else:
             new_job = Job(
                 title=title,
                 company=company_name,
                 description=description,
-                required_skills=[],
+                required_skills=detected_skills,
                 nice_to_have_skills=[],
                 location=location_name,
                 job_type="Not specified",

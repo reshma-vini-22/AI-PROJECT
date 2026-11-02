@@ -42,9 +42,13 @@ def get_job_matches(
 
     # Prefer skills extracted by the existing rule-based analyzer.
     analysis = (
-        db.query(ResumeAnalysis)
-        .filter(ResumeAnalysis.resume_id == resume.id)
-        .first()
+    db.query(ResumeAnalysis)
+    .filter(ResumeAnalysis.resume_id == resume.id)
+    .order_by(
+        ResumeAnalysis.analyzed_at.desc(),
+        ResumeAnalysis.id.desc()
+    )
+    .first()
     )
 
     resume_skills = (

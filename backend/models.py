@@ -131,10 +131,9 @@ class ResumeAnalysis(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     resume_id = Column(
-        Integer,
-        ForeignKey("resumes.id"),
-        nullable=False,
-        unique=True
+    Integer,
+    ForeignKey("resumes.id"),
+    nullable=False
     )
 
     score = Column(Integer, nullable=True)

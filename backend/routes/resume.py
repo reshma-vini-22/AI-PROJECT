@@ -11,6 +11,7 @@ from models import Resume,ResumeAnalysis,User
 from utils.auth_utils import get_current_user
 from services.resume_analyzer import analyze_resume
 from utils.resume_parser import extract_resume_text
+from datetime import datetime
 
 
 router = APIRouter(
@@ -113,41 +114,32 @@ def get_my_resumes(
     }
 
 
+
 @router.get("/latest-analysis")
 def get_latest_analysis(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    # Find the latest resume belonging to the logged-in user
-    resume = (
-        db.query(Resume)
-        .filter(Resume.user_id == current_user.id)
-        .order_by(Resume.uploaded_at.desc(), Resume.id.desc())
-        .first()
-    )
-
-    if not resume:
-        return {
-            "resume": None,
-            "analysis": None
-        }
-
-    # Find the saved analysis for that resume
+    # Retrieve the latest analysis across all resumes
+    # belonging to the logged-in user.
     analysis = (
         db.query(ResumeAnalysis)
-        .filter(ResumeAnalysis.resume_id == resume.id)
+        .join(Resume, Resume.id == ResumeAnalysis.resume_id)
+        .filter(Resume.user_id == current_user.id)
+        .order_by(
+            ResumeAnalysis.analyzed_at.desc(),
+            ResumeAnalysis.id.desc()
+        )
         .first()
     )
 
     if not analysis:
         return {
-            "resume": {
-                "id": resume.id,
-                "filename": resume.filename,
-                "uploaded_at": resume.uploaded_at
-            },
+            "resume": None,
             "analysis": None
         }
+
+    resume = analysis.resume
 
     return {
         "resume": {
@@ -168,6 +160,7 @@ def get_latest_analysis(
             "analyzed_at": analysis.analyzed_at
         }
     }
+
 
 @router.get("/{resume_id}")
 def get_resume(
@@ -224,6 +217,7 @@ def get_resume(
         "text_content": resume.text_content or "",
     }
 
+
 @router.post("/{resume_id}/analyze")
 def analyze_resume_endpoint(
     resume_id: int,
@@ -246,55 +240,41 @@ def analyze_resume_endpoint(
             detail="Resume not found"
         )
 
-    # Make sure the resume contains extracted text
     if not resume.summary:
         raise HTTPException(
             status_code=400,
             detail="No resume text available for analysis"
         )
 
-    # Check whether this resume has already been analyzed
-    existing_analysis = (
-        db.query(ResumeAnalysis)
-        .filter(ResumeAnalysis.resume_id == resume.id)
-        .first()
-    )
-
-    # Analyze the resume text
+    # Analyze resume using the existing rule-based analyzer
     analysis_result = analyze_resume(resume.summary)
 
-    if existing_analysis:
-        # Update the existing analysis
-        existing_analysis.score = analysis_result["score"]
-        existing_analysis.skills = analysis_result["skills"]
-        existing_analysis.education = analysis_result["education"]
-        existing_analysis.experience = analysis_result["experience"]
-        existing_analysis.strengths = analysis_result["strengths"]
-        existing_analysis.weaknesses = analysis_result["weaknesses"]
-        existing_analysis.suggestions = analysis_result["suggestions"]
+    # Always create a new analysis record
+    analysis = ResumeAnalysis(
+        resume_id=resume.id,
+        score=analysis_result["score"],
+        skills=analysis_result["skills"],
+        education=analysis_result["education"],
+        experience=analysis_result["experience"],
+        strengths=analysis_result["strengths"],
+        weaknesses=analysis_result["weaknesses"],
+        suggestions=analysis_result["suggestions"],
+        analyzed_at=datetime.utcnow()
+    )
 
-        analysis = existing_analysis
-
-    else:
-        # Create a new analysis
-        analysis = ResumeAnalysis(
-            resume_id=resume.id,
-            score=analysis_result["score"],
-            skills=analysis_result["skills"],
-            education=analysis_result["education"],
-            experience=analysis_result["experience"],
-            strengths=analysis_result["strengths"],
-            weaknesses=analysis_result["weaknesses"],
-            suggestions=analysis_result["suggestions"]
+    try:
+        db.add(analysis)
+        db.commit()
+        db.refresh(analysis)
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save resume analysis"
         )
 
-        db.add(analysis)
-
-    db.commit()
-    db.refresh(analysis)
-
     return {
-        "message": "Resume analyzed successfully",
+        "message": "Resume analyzed and saved successfully",
         "resume_id": resume.id,
         "analysis": {
             "id": analysis.id,
@@ -302,7 +282,7 @@ def analyze_resume_endpoint(
             "skills": analysis.skills or [],
             "education": analysis.education or [],
             "experience": analysis.experience or [],
-            "projects": analysis_result["projects"],
+            "projects": analysis_result.get("projects", []),
             "strengths": analysis.strengths or [],
             "weaknesses": analysis.weaknesses or [],
             "suggestions": analysis.suggestions or [],

@@ -145,20 +145,26 @@ function DashboardPage() {
     loadDashboard()
   }, [])
 
-  const handleAnalyzeResume = async (resume) => {
-    setSelectedResume(resume)
-    setAnalysis(null)
-    setAnalysisError("")
-    setIsAnalysisOpen(true)
+  
+const handleAnalyzeResume = async (resume) => {
+  setSelectedResume(resume)
+  setAnalysis(null)
+  setAnalysisError("")
+  setIsAnalysisOpen(true)
 
-    try {
-      const result = await analyzeResume(resume.id)
-      setAnalysis(result.analysis)
-      setAnalyzedCount((count) => count + 1)
-    } catch (error) {
-      setAnalysisError(error.message || "Analysis could not be completed.")
-    }
+  try {
+    await analyzeResume(resume.id)
+
+    const latestData = await getLatestAnalysis()
+
+    setAnalysis(latestData?.analysis || null)
+    setSelectedResume(latestData?.resume || null)
+
+    setAnalyzedCount((count) => count + 1)
+  } catch (error) {
+    setAnalysisError(error.message || "Analysis could not be completed.")
   }
+}
 
   const closeAnalysis = () => setIsAnalysisOpen(false)
 

@@ -150,6 +150,34 @@ export async function analyzeResume(resumeId) {
   return data
 }
 
+export async function getLatestAnalysis() {
+  const token = localStorage.getItem("access_token")
+
+  if (!token) {
+    throw new Error("You are not logged in")
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/resumes/latest-analysis`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Failed to retrieve latest analysis")
+  }
+
+  return data
+}
+
+
+
 export async function getJobMatches(resumeId, { refresh = false, since } = {}) {
   const token = localStorage.getItem("access_token")
 
@@ -158,12 +186,13 @@ export async function getJobMatches(resumeId, { refresh = false, since } = {}) {
   }
 
   const params = new URLSearchParams()
+  params.set("resume_id", resumeId)
+
   if (refresh) params.set("refresh", "true")
   if (since) params.set("since", since)
-  const query = params.toString() ? `?${params.toString()}` : ""
 
   const response = await fetch(
-    `${API_BASE_URL}/api/jobs/matches/${resumeId}${query}`,
+    `${API_BASE_URL}/api/jobs/matches?${params.toString()}`,
     {
       method: "GET",
       headers: {
@@ -237,8 +266,7 @@ export const getMe = () => authFetch("/api/auth/me")
 
 export const getResume = (resumeId) =>
   authFetch(`/api/resumes/${resumeId}`)
-export const getLatestAnalysis = () =>
-  authFetch("/api/resumes/latest-analysis")
+
 
 export const updateProfile = (data) =>
   authFetch("/api/auth/profile", { method: "PUT", body: JSON.stringify(data) })

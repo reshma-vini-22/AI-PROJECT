@@ -23,7 +23,11 @@ import {
   Upload,
   X,
 } from "lucide-react"
-import { getMyResumes, getJobMatches } from "../services/api"
+import {
+  getMyResumes,
+  getJobMatches,
+  getLatestAnalysis,
+} from "../services/api"
 import { getSettings } from "../utils/settings"
 
 const ROUTES = {
@@ -144,9 +148,8 @@ function StatTile({ label, value, icon: Icon }) {
 function SkillChip({ children, missing = false }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium ${
-        missing ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"
-      }`}
+      className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium ${missing ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"
+        }`}
     >
       {missing ? <CircleX size={12} /> : <CheckCircle2 size={12} />}
       {children}
@@ -242,9 +245,8 @@ function JobCard({ job, saved, showSkillGaps, onOpen, onToggleSave }) {
         <button
           type="button"
           onClick={onToggleSave}
-          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-            saved ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-100"
-          }`}
+          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${saved ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-100"
+            }`}
         >
           {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
           {saved ? "Saved" : "Save"}
@@ -470,23 +472,42 @@ export default function JobMatchesPage() {
     }
   }, [])
 
+
   useEffect(() => {
     async function loadResumes() {
       try {
-        const data = await getMyResumes()
-        const list = toList(data.resumes).sort(
-          (a, b) => new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0)
+        const [resumeData, latestData] = await Promise.all([
+          getMyResumes(),
+          getLatestAnalysis(),
+        ])
+
+        const list = toList(resumeData.resumes).sort(
+          (a, b) =>
+            new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0)
         )
+
         setResumes(list)
-        if (list.length > 0) setSelectedResumeId(String(list[0].id))
+
+        // Prefer the resume with the latest saved analysis.
+        const latestResumeId = latestData?.resume?.id
+
+        if (latestResumeId && list.some(
+          (resume) => resume.id === latestResumeId
+        )) {
+          setSelectedResumeId(String(latestResumeId))
+        } else if (list.length > 0) {
+          setSelectedResumeId(String(list[0].id))
+        }
       } catch (err) {
         setError(err.message || "Could not load your resumes.")
       } finally {
         setResumesLoading(false)
       }
     }
+
     loadResumes()
   }, [])
+
 
   async function loadMatches(resumeId, refresh = false) {
     const requestId = ++requestRef.current
@@ -695,9 +716,8 @@ export default function JobMatchesPage() {
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => setPreferredSite(id)}
-                    className={`inline-flex items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition ${site.style} ${
-                      preferredSite === id ? "ring-2 ring-emerald-400 ring-offset-2" : ""
-                    }`}
+                    className={`inline-flex items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition ${site.style} ${preferredSite === id ? "ring-2 ring-emerald-400 ring-offset-2" : ""
+                      }`}
                   >
                     {site.label}
                     <ExternalLink size={12} />
@@ -743,11 +763,10 @@ export default function JobMatchesPage() {
                       key={item.id}
                       type="button"
                       onClick={() => setTier(item.id)}
-                      className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                        tier === item.id
+                      className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${tier === item.id
                           ? "bg-white text-slate-900 shadow-sm"
                           : "text-slate-500 hover:text-slate-900"
-                      }`}
+                        }`}
                     >
                       {item.label}
                     </button>
