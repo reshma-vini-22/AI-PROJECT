@@ -151,6 +151,7 @@ def get_job_matches(
     return {
         "message": "Job matches retrieved successfully",
         "resume_id": resume.id,
+        "resume_skills": resume_skills,
         "total_jobs": len(results),
         "jobs": results
     }
